@@ -1,0 +1,5 @@
+# Local override for UPower battery charge thresholds (ThinkPad T480s):
+# stop charging at 85%, resume only below 50%. Enable it from DMS or with
+# `busctl call org.freedesktop.UPower /org/freedesktop/UPower/devices/battery_BAT0 org.freedesktop.UPower.Device EnableChargeThreshold b true`.
+battery:*:*:dmi:*
+ CHARGE_LIMIT=50,85

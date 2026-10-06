@@ -1,0 +1,5 @@
+# ThinkPad T480s: stop charging at 85%, resume only when below 50%.
+# Written straight to the battery firmware (thinkpad_acpi) at boot and on every
+# battery event, so it survives reboots without UPower/DMS. End first: the
+# firmware rejects a start threshold that is not below the end threshold.
+SUBSYSTEM=="power_supply", KERNEL=="BAT0", ACTION=="add|change", ATTR{charge_control_end_threshold}="85", ATTR{charge_control_start_threshold}="50"
