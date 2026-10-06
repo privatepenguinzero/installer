@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# tests/run - shellcheck everything, then the bats suite. Both run in
+# containers so the laptop needs only podman. Tests that themselves need
+# podman (lists.bats, ks.bats) run in a podman-in-podman container.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+PODMAN_TESTS=(lists.bats ks.bats)
+mapfile -t scripts < <(git ls-files --cached --others --exclude-standard 'install.sh' 'lib/*.sh' 'bin/*' 'install/render-ks' 'install/netboot-hook' 'install/backup-home' 'tests/run')
+podman run --rm -v "$PWD:/mnt:Z" -w /mnt docker.io/koalaman/shellcheck:stable -x "${scripts[@]}"
+mapfile -t plain < <(cd tests && for f in *.bats; do [[ " ${PODMAN_TESTS[*]} " == *" $f "* ]] || echo "/code/tests/$f"; done)
+if (( ${#plain[@]} )); then podman run --rm -v "$PWD:/code:Z" docker.io/bats/bats:latest "${plain[@]}"; fi
+mapfile -t nested < <(cd tests && for f in "${PODMAN_TESTS[@]}"; do [[ -f $f ]] && echo "/code/tests/$f"; done)
+if (( ${#nested[@]} )); then
+  podman run --rm --privileged -v "$PWD:/code:Z" quay.io/podman/stable:latest \
+    bash -c "dnf -yq install bats >/dev/null && bats ${nested[*]}"
+fi
