@@ -210,21 +210,76 @@ that will be used for real. A run counts as passing when:
 The battery step only runs on real hardware. It is checked once on the laptop
 by reading `/sys/class/power_supply/BAT0/charge_control_*_threshold`.
 
-## Migration
+## Migration: unattended network install that keeps /home
 
-1. **Backup.** Copy all of `/var/home/icenoir` to the m720q or to an external
-   disk with `rsync -aHAX`, verify the copy, and keep it until the new system
-   has been in use for two weeks. List the Flatpak data dirs and libvirt
-   images separately, because they can be large.
-2. **Install.** Install Fedora KDE from USB and erase the disk. This step is
-   done by the user, following a checklist in the README.
-3. **Run.** Run `install.sh`, then `pass-cli login` when asked, then the
-   script again.
-4. **Restore data.** Restore from the backup: `~/personale`,
-   `~/.claude/projects` (session history), `~/.ssh/known_hosts`, browser
-   profiles, Flatpak app data and VM images.
-5. **Retire penguinos.** Disable its scheduled workflows and archive the
+### Facts it relies on (checked 2026-10-06)
+
+- **Disk.** `nvme0n1p3` is one btrfs volume (475 GB, 98 GB used) with
+  subvolumes `root` (the ostree sysroot) and `home` (mounted on `/var/home`).
+  The other partitions are `p1` EFI (600 MB) and `p2` `/boot` (2 GB).
+- **Firmware.** Secure Boot is off, and the firmware has `PCI LAN` network boot
+  entries (`Boot001C`, `Boot0023`).
+- **Network.** The wired NIC `enp0s31f6` (MAC `<laptop-mac>`) is
+  connected. PXE cannot work over Wi-Fi.
+- **netboot.xyz.** Runs as Docker stack `/opt/stacks/netbootxyz` in LXC 107
+  (<netboot-lxc-ip>) on pve-m720q, with `network_mode: host`. Its `dnsmasq.conf`
+  runs in proxy-DHCP mode (`dhcp-range=<lan-network>,proxy`), so the router
+  keeps serving addresses and dnsmasq only adds the PXE boot offer.
+
+### Who drives it
+
+Claude runs from a temporary LXC on pve-m720q, logged in with the personal
+account, because the laptop session disappears at the first reboot. It works
+over SSH to the laptop, then to the installer, then to the new system.
+Dropbear is not needed: the Fedora installer brings its own sshd
+(`inst.sshd`). Dropbear becomes relevant only if LUKS is chosen, to unlock the
+disk remotely on later boots.
+
+### Steps
+
+1. **Backup.** `rsync -aHAX` of `/var/home/icenoir` to pve-m720q's Sabrent
+   disk, checked with a second `rsync --checksum --dry-run`. The Wi-Fi
+   profiles and `/var/lib/netbird` are copied too. Nothing proceeds until the
+   copy is verified.
+2. **Kickstart.** `install/t480s.ks` in this repo answers every installer
+   question:
+   - keyboard `it`, `LANG=en_US.UTF-8`, user `icenoir` with UID 1000;
+   - reformat `p1` and `p2`;
+   - on `p3`, delete only the `root` subvolume, create a new `root`, and mount
+     the existing `home` subvolume on `/home` without formatting;
+   - package set `@kde-desktop-environment`;
+   - `%post` runs `restorecon -R /home` and clones this repo into the user's
+     home.
+   The script itself runs after the first login, because chezmoi needs
+   `pass-cli login`.
+3. **Netboot hook, only for the laptop.**
+   - Add a tag for MAC `<laptop-mac>` to netboot.xyz's `dnsmasq.conf`, so
+     that MAC is served an iPXE script.
+   - The script boots the Fedora KDE release's `images/pxeboot` kernel and
+     initrd with `inst.ks=… inst.sshd inst.text`.
+   - Every other device keeps getting the normal netboot.xyz menu.
+   - The hook is removed right after the install.
+4. **Rehearsal.** The whole chain runs end to end on a throwaway Proxmox VM on
+   pve-m720q, bridged on `vmbr0` so it sees the proxy DHCP. The VM's disk is
+   laid out like the laptop's: a btrfs volume with `root` and `home`
+   subvolumes and a marker file in `home`. It passes when the marker file
+   survives and the user can log in to Plasma and niri.
+5. **Go.** With the user nearby and a Fedora KDE USB stick ready as fallback:
+   - `efibootmgr --bootnext 001C` on the laptop, then reboot;
+   - follow the install over `ssh install@<laptop>`;
+   - after the reboot, SSH into the new system and run `install.sh`;
+   - the user does `pass-cli login`, then `install.sh` runs again.
+6. **Verify and clean up.**
+   - Run the testing checklist on the real machine.
+   - Remove the dnsmasq hook.
+   - Restore the Wi-Fi profiles and NetBird state.
+   - Destroy the temporary LXC.
+7. **Retire penguinos.** Disable its scheduled workflows and archive the
    repository. Images already on GHCR are left alone.
+
+If anything fails before the disk is touched, the laptop simply boots
+penguinos again. If it fails after, the USB stick and the verified backup are
+the way back.
 
 ## Out of scope
 
