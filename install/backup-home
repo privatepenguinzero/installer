@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# install/backup-home DEST - full copy of the home plus machine state, then a
+# checksum verification pass. Run on the laptop; sudo for the root-only bits,
+# which go first so sudo asks once.
+set -euo pipefail
+dest=${1:?usage: backup-home user@host:/path}
+rssh="ssh -i $HOME/.ssh/id_ed25519 -o StrictHostKeyChecking=accept-new"
+host=${dest%%:*} path=${dest#*:}
+# shellcheck disable=SC2029  # the path is meant to expand here, on the client
+ssh "$host" "mkdir -p '$path'"
+sudo rsync -aHAX -e "$rssh" /etc/NetworkManager/system-connections/ "$dest/nm/"
+sudo rsync -aHAX -e "$rssh" /var/lib/netbird/ "$dest/netbird/"
+rsync -aHAX --info=progress2 --exclude='.cache/' /var/home/icenoir/ "$dest/home/"
+changes=$(rsync -aHAXn --checksum --exclude='.cache/' --out-format='%n' /var/home/icenoir/ "$dest/home/" | grep -vc '/$' || true)
+if (( changes != 0 )); then echo "backup verification found $changes differing files" >&2; exit 1; fi
+echo "backup verified"
