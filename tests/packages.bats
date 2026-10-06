@@ -24,3 +24,12 @@ setup() {
   run upgrade_system
   [ "$status" -ne 0 ]
 }
+
+@test "install_codecs leaves an installed codec set alone" {
+  rpm() { shift; local p; for p in "$@"; do
+    case $p in ffmpeg|gstreamer1-plugins-bad-freeworld|gstreamer1-plugins-ugly|gstreamer1-plugin-libav) ;; *) return 1 ;; esac
+  done; }
+  dnf5() { echo "$*" >> "$CALLS"; }
+  install_codecs
+  [ ! -s "$CALLS" ]
+}

@@ -27,7 +27,7 @@ install_dnf_list() {
 }
 
 install_codecs() {
-  if rpm -q ffmpeg gstreamer1-plugins-bad-freeworld gstreamer1-plugins-ugly gstreamer1-libav >/dev/null 2>&1; then
+  if rpm -q ffmpeg gstreamer1-plugins-bad-freeworld gstreamer1-plugins-ugly gstreamer1-plugin-libav >/dev/null 2>&1; then
     mark_ok "codecs"; return
   fi
   if rpm -q ffmpeg-free >/dev/null 2>&1; then
@@ -36,7 +36,7 @@ install_codecs() {
     retry sudo dnf5 -y install ffmpeg --allowerasing || die "could not install ffmpeg"
   fi
   retry sudo dnf5 -y install --allowerasing --setopt=install_weak_deps=False --exclude=PackageKit-gstreamer-plugin \
-    gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugins-bad-freeworld gstreamer1-plugins-ugly gstreamer1-libav x264-libs \
+    gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugins-bad-freeworld gstreamer1-plugins-ugly gstreamer1-plugin-libav x264-libs \
     || die "could not install the GStreamer plugins"
   mark_changed "installed codecs"
 }
