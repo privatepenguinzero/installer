@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# bin/migrate-home-paths - one-shot rename of Claude Code state after the home
+# moves from /var/home/icenoir to /home/icenoir. Claude keys per-project state
+# by path, so without this the conversations and the memory disappear.
+set -euo pipefail
+old=${1:-/var/home/icenoir} new=${2:-/home/icenoir}
+cdir=${CLAUDE_DIR:-$HOME/.claude} cjson=${CLAUDE_JSON:-$HOME/.claude.json}
+okey=${old//\//-} nkey=${new//\//-}
+
+shopt -s nullglob
+existing=()
+for d in "$cdir/projects/$okey" "$cdir/projects/$okey"-*; do [[ -e "$d" ]] && existing+=("$d"); done
+files=()
+for f in "$cjson" "$cdir/settings.json"; do [[ -f "$f" ]] && grep -qF "$old" "$f" && files+=("$f"); done
+
+if (( ${#existing[@]} == 0 && ${#files[@]} == 0 )); then echo "nothing to migrate"; exit 0; fi
+
+for d in "${existing[@]}"; do
+  t="$cdir/projects/$nkey${d#"$cdir/projects/$okey"}"
+  if [[ -e "$t" ]]; then echo "refusing: $t already exists" >&2; exit 3; fi
+done
+
+for d in "${existing[@]}"; do mv "$d" "$cdir/projects/$nkey${d#"$cdir/projects/$okey"}"; done
+for f in "${files[@]}"; do cp -p "$f" "$f.pre-migration"; sed -i "s#$old#$new#g" "$f"; done
+echo "migrated ${#existing[@]} project dirs and ${#files[@]} files"
