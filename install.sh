@@ -21,7 +21,7 @@ sudo -v
 while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done 2>/dev/null &
 
 log "1/8 dnf and repositories"; setup_dnf
-log "2/8 system packages";      install_dnf_list "$REPO/lists/dnf.txt"; install_codecs; install_node24
+log "2/8 system packages";      upgrade_system; install_dnf_list "$REPO/lists/dnf.txt"; install_codecs; install_node24
 log "3/8 tools outside dnf";    install_brew; install_brew_list "$REPO/lists/brew.txt"; install_github_tools; install_cursor; install_claude
 log "4/8 flatpaks";             install_flatpak_list "$REPO/lists/flatpak.txt"
 log "5/8 services and system";  install_system_files "$REPO/system/common"; enable_services; add_cifs_mount; recolor_papirus

@@ -4,6 +4,18 @@
 # missing_rpms NAME... - prints each name that is not installed.
 missing_rpms() { local p; for p in "$@"; do rpm -q "$p" >/dev/null 2>&1 || echo "$p"; done; }
 
+# upgrade_system - bring a fresh install up to date first: half-upgraded KDE
+# packages (kmime -> kf6-kmime) otherwise conflict with the list's dependencies.
+upgrade_system() {
+  local rc=0
+  sudo dnf5 -q check-upgrade >/dev/null || rc=$?
+  case $rc in
+    0) mark_ok "system up to date" ;;
+    100) retry sudo dnf5 -y upgrade || die "dnf upgrade failed"; mark_changed "upgraded the system" ;;
+    *) die "dnf could not check for updates" ;;
+  esac
+}
+
 install_dnf_list() {
   local -a want missing
   mapfile -t want < <(read_list "$1")
