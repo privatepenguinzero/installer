@@ -1,0 +1,85 @@
+# desktop apps used inside niri
+nautilus
+mpv
+gnome-terminal
+gnome-system-monitor
+gnome-calculator
+loupe
+seahorse
+qt6-qtwayland
+papirus-icon-theme
+# CLI
+mc
+btop
+rsync
+fastfetch
+unzip
+git
+wget2-wget
+curl
+bat
+eza
+duf
+jq
+tealdeer
+iperf3
+just
+yq
+bind-utils
+rpm-build
+chezmoi
+gh
+zsh
+zoxide
+fzf
+neovim
+ripgrep
+fd-find
+git-delta
+gitleaks
+xclip
+wl-clipboard
+gcc
+gcc-c++
+make
+cargo
+cifs-utils
+dnf5-plugin-automatic
+openssh-server
+# virtualization and containers
+qemu-kvm
+libvirt
+virt-install
+virt-manager
+gnome-boxes
+distrobox
+podman-compose
+# Terra
+starship
+golang-github-jesseduffield-lazygit
+topgrade
+ghostty
+# desktop: niri + DankMaterialShell (Terra / COPR avengemedia/dms)
+niri
+niri-settings
+quickshell
+dms
+# COPR chuang/espanso-wayland
+espanso
+# Brave
+brave-origin
+# NetBird
+netbird
+# fonts
+rsms-inter-vf-fonts
+google-roboto-fonts
+google-roboto-mono-fonts
+open-sans-fonts
+lato-fonts
+julietaula-montserrat-fonts
+adobe-source-code-pro-fonts
+vernnobile-nunito-fonts
+weiweihuanghuang-work-sans-fonts
+fira-code-fonts
+ibm-plex-sans-fonts
+ibm-plex-mono-fonts
