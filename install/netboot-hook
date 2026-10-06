@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# install/netboot-hook enable MAC KS_URL | disable
+# MAC-gated chain on the homelab netboot.xyz: only that NIC boots straight into
+# the Fedora installer; every other machine still gets the normal menu.
+set -euo pipefail
+PVE=root@<pve-host> CT=107 F=/opt/stacks/netbootxyz/config/menus/local-vars.ipxe
+FED=https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os
+remote() { ssh -o BatchMode=yes "$PVE" "pct exec $CT -- sh -c $(printf '%q' "$1")"; }
+
+case "${1:-}" in
+  enable)
+    mac=${2:?MAC} ks=${3:?KS_URL}
+    block="# BEGIN t480s-install
+iseq \${netX/mac} $mac && goto t480s_install || goto t480s_end
+:t480s_install
+kernel $FED/images/pxeboot/vmlinuz inst.repo=$FED inst.ks=$ks inst.sshd inst.text ip=dhcp initrd=initrd.img
+initrd $FED/images/pxeboot/initrd.img
+boot
+:t480s_end
+# END t480s-install"
+    remote "touch $F; [ -f $F.orig ] || cp -a $F $F.orig; sed -i '/# BEGIN t480s-install/,/# END t480s-install/d' $F"
+    printf '%s\n' "$block" | ssh -o BatchMode=yes "$PVE" "pct exec $CT -- sh -c 'cat >> $F'"
+    remote "grep -c 't480s-install' $F" ;;
+  disable)
+    remote "sed -i '/# BEGIN t480s-install/,/# END t480s-install/d' $F; ! grep -q t480s-install $F && echo hook removed" ;;
+  *) echo "usage: $0 enable MAC KS_URL | disable" >&2; exit 1 ;;
+esac
