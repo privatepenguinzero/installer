@@ -1,0 +1,47 @@
+# Fedora 44 KDE, unattended, keeps the btrfs "home" subvolume. Rendered by install/render-ks.
+text
+lang en_US.UTF-8
+keyboard --vckeymap=it --xlayouts=it
+timezone Europe/Rome --utc
+network --bootproto=dhcp --device=link --activate --hostname=thinkpad
+url --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=fedora-44&arch=x86_64"
+repo --name=updates --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?repo=updates-released-f44&arch=x86_64"
+rootpw --iscrypted @ROOT_HASH@
+user --name=icenoir --uid=1000 --gid=1000 --groups=wheel --homedir=/home/icenoir --iscrypted --password=@USER_HASH@
+firstboot --disable
+selinux --enforcing
+services --enabled=sshd
+ignoredisk --only-use=@DISK@
+bootloader --boot-drive=@DISK@
+part /boot/efi --onpart=@PART@1 --fstype=efi
+part /boot --onpart=@PART@2 --fstype=ext4 --label=fedora_boot
+part btrfs.01 --onpart=@PART@3 --noformat
+btrfs none --noformat --label=fedora btrfs.01
+btrfs / --subvol --name=root LABEL=fedora
+btrfs /home --subvol --name=home --noformat LABEL=fedora
+reboot
+
+%pre --log=/tmp/ks-pre.log
+set -e
+mkdir -p /mnt/p3
+mount /dev/@PART@3 /mnt/p3
+if [ -d /mnt/p3/root ] && [ ! -e /mnt/p3/ostree-old ]; then mv /mnt/p3/root /mnt/p3/ostree-old; fi
+umount /mnt/p3
+btrfs filesystem label /dev/@PART@3 fedora
+%end
+
+%packages
+@^kde-desktop-environment
+git
+%end
+
+%post --log=/root/ks-post.log
+set -e
+install -d -m 0755 /etc/ssh/sshd_config.d
+printf 'PermitRootLogin no\nPasswordAuthentication no\n' > /etc/ssh/sshd_config.d/10-key-only.conf
+restorecon -R /home
+[ -e /var/home ] || ln -s /home /var/home
+if [ ! -d /home/icenoir/installer ]; then
+  runuser -u icenoir -- git clone -q https://github.com/privatepenguinzero/installer /home/icenoir/installer
+fi
+%end

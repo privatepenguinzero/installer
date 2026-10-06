@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# install/render-ks OUT - fill the kickstart template. Output holds password
+# hashes: never commit it (this repo is public).
+set -euo pipefail
+out=${1:?usage: render-ks OUT}
+disk=${KS_DISK:-nvme0n1}
+if [[ $disk == nvme* ]]; then part="${disk}p"; else part="$disk"; fi
+hash=$(openssl passwd -6 "${KS_PASSWORD:-icenoir}")
+umask 077
+sed -e "s|@ROOT_HASH@|$hash|" -e "s|@USER_HASH@|$hash|" -e "s|@DISK@|$disk|g" -e "s|@PART@|$part|g" \
+  "$(dirname "$0")/t480s.ks.in" > "$out"
+echo "wrote $out"

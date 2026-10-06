@@ -12,5 +12,5 @@ if (( ${#plain[@]} )); then podman run --rm -v "$PWD:/code:Z" docker.io/bats/bat
 mapfile -t nested < <(cd tests && for f in "${PODMAN_TESTS[@]}"; do [[ -f $f ]] && echo "/code/tests/$f"; done)
 if (( ${#nested[@]} )); then
   podman run --rm --privileged -v "$PWD:/code:Z" quay.io/podman/stable:latest \
-    bash -c "dnf -yq install bats >/dev/null && bats ${nested[*]}"
+    bash -c "dnf -yq install bats openssl >/dev/null && bats ${nested[*]}"
 fi
