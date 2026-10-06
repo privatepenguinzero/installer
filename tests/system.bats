@@ -20,3 +20,10 @@ setup() {
   CHANGED=(); install_system_files "$src"
   [ "${#CHANGED[@]}" -eq 0 ]
 }
+
+@test "enable_services stops when a service cannot be enabled" {
+  systemctl() { [[ $1 == is-enabled ]] && return 1; [[ $* == *libvirtd* ]] && return 1; return 0; }
+  sudo() { "$@"; }
+  run enable_services
+  [ "$status" -ne 0 ]; [[ "$output" == *libvirtd* ]]
+}

@@ -20,7 +20,7 @@ enable_services() {
   local u
   for u in sshd libvirtd podman.socket dnf5-automatic.timer; do
     if systemctl is-enabled -q "$u" 2>/dev/null; then mark_ok "$u enabled"; else
-      sudo systemctl enable --now "$u" && mark_changed "enabled $u"
+      sudo systemctl enable --now "$u" || die "could not enable $u"; mark_changed "enabled $u"
     fi
   done
   if [[ ! -f /etc/dnf/automatic.conf ]] || ! grep -q '^apply_updates = yes' /etc/dnf/automatic.conf; then
@@ -31,7 +31,7 @@ enable_services() {
   if ! id -nG "$USER" | grep -qw libvirt; then sudo usermod -aG libvirt "$USER"; mark_changed "added $USER to libvirt"; fi
   if ! systemctl is-enabled -q netbird 2>/dev/null; then
     sudo netbird service install 2>/dev/null || true
-    sudo systemctl enable --now netbird && mark_changed "enabled netbird"
+    sudo systemctl enable --now netbird || die "could not enable netbird"; mark_changed "enabled netbird"
   fi
 }
 
