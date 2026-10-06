@@ -17,9 +17,9 @@ bootloader --boot-drive=@DISK@
 part /boot/efi --onpart=@PART@1 --fstype=efi
 part /boot --onpart=@PART@2 --fstype=ext4 --label=fedora_boot
 part btrfs.01 --onpart=@PART@3 --noformat
-btrfs none --noformat --label=fedora btrfs.01
-btrfs / --subvol --name=root LABEL=fedora
-btrfs /home --subvol --name=home --noformat LABEL=fedora
+btrfs none --noformat --name=fedora btrfs.01
+btrfs / --subvol --name=root fedora
+btrfs /home --subvol --name=home --noformat fedora
 reboot
 
 %pre --log=/tmp/ks-pre.log

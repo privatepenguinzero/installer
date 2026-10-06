@@ -18,9 +18,10 @@ initrd $FED/images/pxeboot/initrd.img
 boot
 :t480s_end
 # END t480s-install"
-    remote "touch $F; [ -f $F.orig ] || cp -a $F $F.orig; sed -i '/# BEGIN t480s-install/,/# END t480s-install/d' $F"
+    remote "[ -s $F ] || echo '#!ipxe' > $F; [ -f $F.orig ] || cp -a $F $F.orig; sed -i '/# BEGIN t480s-install/,/# END t480s-install/d' $F"
     printf '%s\n' "$block" | ssh -o BatchMode=yes "$PVE" "pct exec $CT -- sh -c 'cat >> $F'"
-    remote "grep -c 't480s-install' $F" ;;
+    # dnsmasq-tftp refuses files it cannot read as its own user
+    remote "chown --reference=${F%/*}/menu.ipxe $F && chmod 0644 $F && grep -c 't480s-install' $F" ;;
   disable)
     remote "sed -i '/# BEGIN t480s-install/,/# END t480s-install/d' $F; ! grep -q t480s-install $F && echo hook removed" ;;
   *) echo "usage: $0 enable MAC KS_URL | disable" >&2; exit 1 ;;

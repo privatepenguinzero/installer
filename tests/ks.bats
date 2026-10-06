@@ -3,6 +3,9 @@
   KS_SSHKEY='ssh-ed25519 AAAAtest k@t' "$BATS_TEST_DIRNAME/../install/render-ks" "$out"
   ! grep -q '@[A-Z_]*@' "$out" || false
   grep -qx 'sshpw --username=root --sshkey "ssh-ed25519 AAAAtest k@t"' "$out"
+  # anaconda finds a reused btrfs volume by --name (blivet names it after its label)
+  grep -qx 'btrfs none --noformat --name=fedora btrfs.01' "$out"
+  grep -qx 'btrfs /home --subvol --name=home --noformat fedora' "$out"
   ! grep -E '^(rootpw|user)' "$out" | grep -qE '(password=|rootpw --iscrypted )icenoir( |$)' || false
   run podman run --rm -v "$out:/t.ks:ro,Z" registry.fedoraproject.org/fedora:44 \
     bash -c 'dnf -yq install pykickstart >/dev/null && ksvalidator -v F44 /t.ks'
