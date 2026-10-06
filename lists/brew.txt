@@ -1,0 +1,8 @@
+direnv
+gh
+git-filter-repo
+git-lfs
+kubernetes-cli
+herdr
+rtk
+superfile
