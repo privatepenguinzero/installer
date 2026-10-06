@@ -191,7 +191,7 @@ Deliberately dropped:
   these itself.
 
 The disk is not encrypted today (`/etc/crypttab` is empty). Whether to enable
-LUKS on the new install is a choice in the install checklist.
+LUKS on the new install is decided before the kickstart is written.
 
 ## Testing
 
