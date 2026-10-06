@@ -8,6 +8,9 @@ apply_battery_thresholds() {
   sudo systemd-hwdb update
   sudo udevadm trigger --subsystem-match=power_supply
   sudo udevadm settle
+  # UPower reads CHARGE_LIMIT only when it adds the battery: a daemon started
+  # before the hwdb file existed keeps the 75,80 default
+  sudo systemctl restart upower
   sudo busctl call org.freedesktop.UPower /org/freedesktop/UPower/devices/battery_BAT0 \
     org.freedesktop.UPower.Device EnableChargeThreshold b true >/dev/null || warn "UPower EnableChargeThreshold failed"
   # udev applies the rule asynchronously: give the threshold a few seconds to land
