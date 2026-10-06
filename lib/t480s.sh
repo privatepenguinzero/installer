@@ -7,7 +7,11 @@ apply_battery_thresholds() {
   install_system_files "$REPO/system/t480s"
   sudo systemd-hwdb update
   sudo udevadm trigger --subsystem-match=power_supply
+  sudo udevadm settle
   sudo busctl call org.freedesktop.UPower /org/freedesktop/UPower/devices/battery_BAT0 \
     org.freedesktop.UPower.Device EnableChargeThreshold b true >/dev/null || warn "UPower EnableChargeThreshold failed"
-  [[ "$(cat /sys/class/power_supply/BAT0/charge_control_end_threshold)" == 85 ]] || warn "battery end threshold is not 85"
+  # udev applies the rule asynchronously: give the threshold a few seconds to land
+  local f="${BAT_DIR:-/sys/class/power_supply/BAT0}/charge_control_end_threshold" _
+  for _ in {1..10}; do [[ "$(cat "$f" 2>/dev/null)" == 85 ]] && return 0; sleep 0.5; done
+  warn "battery end threshold is not 85"
 }
