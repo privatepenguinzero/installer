@@ -6,6 +6,8 @@
   # anaconda finds a reused btrfs volume by --name (blivet names it after its label)
   grep -qx 'btrfs none --noformat --name=fedora btrfs.01' "$out"
   grep -qx 'btrfs /home --subvol --name=home --noformat fedora' "$out"
+  # without it os-release has no VARIANT_ID=kde and install.sh refuses the system
+  grep -qx 'dnf -y swap fedora-release-identity-basic fedora-release-identity-kde' "$out"
   ! grep -E '^(rootpw|user)' "$out" | grep -qE '(password=|rootpw --iscrypted )icenoir( |$)' || false
   run podman run --rm -v "$out:/t.ks:ro,Z" registry.fedoraproject.org/fedora:44 \
     bash -c 'dnf -yq install pykickstart >/dev/null && ksvalidator -v F44 /t.ks'

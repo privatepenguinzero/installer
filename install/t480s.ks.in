@@ -40,6 +40,8 @@ git
 set -e
 install -d -m 0755 /etc/ssh/sshd_config.d
 printf 'PermitRootLogin no\nPasswordAuthentication no\n' > /etc/ssh/sshd_config.d/10-key-only.conf
+# the KDE group leaves the basic identity in place: os-release lacks VARIANT_ID=kde
+dnf -y swap fedora-release-identity-basic fedora-release-identity-kde
 restorecon -R /home
 [ -e /var/home ] || ln -s /home /var/home
 if [ ! -d /home/icenoir/installer ]; then
