@@ -161,10 +161,37 @@ Restored from the backup during migration, never committed:
   `/etc/systemd/system/netbird.service` is not copied. If the restored state
   is rejected, run `sudo netbird up` to log in again.
 
-The full list of `/etc` changes made on top of the penguinos image comes from
-`sudo ostree admin config-diff`, run once before the backup. Any entry not
-covered above is either added to `install.sh` or deliberately dropped, and
-that choice is noted in the README.
+## Audit of local /etc changes (2026-10-06)
+
+The audit compared `/etc` with the image's pristine `/usr/etc`. It found 98
+entries after filtering out accounts, machine identity and generated caches.
+The only ones worth carrying over are already covered above:
+
+- the battery hwdb and udev rule;
+- the Wi-Fi profiles and the NetBird state;
+- `~/.ssh` (outside `/etc`).
+
+Set in the Fedora installer, not by the script:
+
+- keyboard layout `it` (pc105);
+- `LANG=en_US.UTF-8`.
+
+Deliberately dropped:
+
+- **Bazzite leftovers from an earlier rebase:** `bazzite/`, `hhd/`, the
+  `steamos` and autologin `sddm.conf.d` files, and the tuned profile
+  `balanced-battery-bazzite`. Fedora's own power profiles replace that
+  profile.
+- **greetd config and its backups.**
+- **The hand-made `netbird.service`.** The RPM ships its own unit, and
+  `99-netbird.conf` comes with it.
+- **authselect `with-fingerprint`.** No fingerprint device is detected.
+- **systemd `system.control` resource drop-ins, `default.target`,
+  `vconsole.conf`, `sysconfig/*` and `fstab`.** The new install generates
+  these itself.
+
+The disk is not encrypted today (`/etc/crypttab` is empty). Whether to enable
+LUKS on the new install is a choice in the install checklist.
 
 ## Testing
 
