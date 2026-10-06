@@ -1,7 +1,7 @@
 # Fedora KDE installer: replacing the penguinos image
 
 Date: 2026-10-06
-Status: draft, awaiting review
+Status: approved 2026-10-06
 
 ## Why
 
@@ -29,6 +29,8 @@ fix it by rerunning the script.
 | User config | All of it lives in chezmoi (`privatepenguinzero/dotfiles`); the script installs no dotfiles itself |
 | Distros | Fedora only; the multi-distro scaffolding in the current `packages.sh` goes away |
 | Repo | This repository (`privatepenguinzero/installer`) |
+| Disk encryption | None (no LUKS), so Dropbear is not needed |
+| Initial passwords | Temporary: `icenoir` for both `icenoir` and `root`. The user changes them after the install |
 
 ## Repository layout
 
@@ -252,6 +254,18 @@ disk remotely on later boots.
      home.
    The script itself runs after the first login, because chezmoi needs
    `pass-cli login`.
+
+   The temporary passwords are stored as SHA-512 hashes (`--iscrypted`).
+   This repository is public, so only a template `install/t480s.ks.in` is
+   committed. The rendered kickstart, with the hashes, the MAC and the LAN
+   addresses, is generated locally and served from netboot.xyz's web root for
+   the duration of the install.
+
+   The new system has key-only SSH from the first boot:
+   `/home/icenoir/.ssh/authorized_keys` survives in the kept `home` subvolume,
+   and `%post` sets `PermitRootLogin no` and `PasswordAuthentication no`. The
+   weak temporary passwords are therefore usable only at the local console,
+   never over the LAN.
 3. **Netboot hook, only for the laptop.**
    - Add a tag for MAC `<laptop-mac>` to netboot.xyz's `dnsmasq.conf`, so
      that MAC is served an iPXE script.
