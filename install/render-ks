@@ -5,8 +5,10 @@ set -euo pipefail
 out=${1:?usage: render-ks OUT}
 disk=${KS_DISK:-nvme0n1}
 if [[ $disk == nvme* ]]; then part="${disk}p"; else part="$disk"; fi
+sshkey=${KS_SSHKEY:-$(cat ~/.ssh/id_ed25519.pub)}  # allowed into the installer shell
 hash=$(openssl passwd -6 "${KS_PASSWORD:-icenoir}")
 umask 077
 sed -e "s|@ROOT_HASH@|$hash|" -e "s|@USER_HASH@|$hash|" -e "s|@DISK@|$disk|g" -e "s|@PART@|$part|g" \
+  -e "s|@SSH_KEY@|$sshkey|" \
   "$(dirname "$0")/t480s.ks.in" > "$out"
 echo "wrote $out"

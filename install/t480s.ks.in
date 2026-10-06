@@ -11,6 +11,7 @@ user --name=icenoir --uid=1000 --gid=1000 --groups=wheel --homedir=/home/icenoir
 firstboot --disable
 selinux --enforcing
 services --enabled=sshd
+sshpw --username=root --sshkey "@SSH_KEY@"
 ignoredisk --only-use=@DISK@
 bootloader --boot-drive=@DISK@
 part /boot/efi --onpart=@PART@1 --fstype=efi

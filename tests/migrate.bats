@@ -13,7 +13,7 @@ setup() {
   [ -d "$CLAUDE_DIR/projects/-home-icenoir-personale-x" ]
   [ ! -e "$CLAUDE_DIR/projects/-var-home-icenoir" ]
   grep -q '"/home/icenoir/personale/x"' "$CLAUDE_JSON"
-  ! grep -q /var/home "$CLAUDE_JSON" "$CLAUDE_DIR/settings.json"
+  ! grep -q /var/home "$CLAUDE_JSON" "$CLAUDE_DIR/settings.json" || false
   [ -f "$CLAUDE_JSON.pre-migration" ]
 }
 
