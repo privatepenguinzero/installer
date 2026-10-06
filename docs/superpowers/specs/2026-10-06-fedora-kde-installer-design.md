@@ -116,8 +116,9 @@ does not manage yet:
   superfile (zsh-syntax-highlighting also as an external);
 - the herdr `config.toml`;
 - the GTK 3 and GTK 4 `settings.ini`;
-- the Catppuccin cursors, and the Papirus folder recolour run as a
-  `run_onchange_` script.
+- the Catppuccin cursors, as a chezmoi archive external. The Papirus folder
+  recolour rewrites `/usr/share/icons`, so it needs root and runs in
+  `install.sh` step 6 instead.
 
 **Claude Code.** Nothing under `~/.claude` is backed up today. Added to
 dotfiles:
@@ -204,9 +205,10 @@ LUKS on the new install is decided before the kickstart is written.
 
 ## Testing
 
-Everything is tested in a libvirt VM on the current laptop before the real
-machine is touched. The VM is Fedora KDE stable, installed from the same ISO
-that will be used for real. A run counts as passing when:
+Unit tests (bats) and shellcheck run on every change through `tests/run`.
+The end-to-end test is the rehearsal described under Migration: a throwaway
+Proxmox VM, installed through the same netboot hook and kickstart that will
+be used for real. It passes when:
 
 1. a fresh run of `install.sh` exits 0;
 2. a second run exits 0 and reports nothing changed;
