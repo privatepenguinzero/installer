@@ -47,3 +47,14 @@ setup() {
   CHANGED=(); ensure_graphical_boot
   [ "${#CHANGED[@]}" -eq 0 ]
 }
+
+@test "ensure_zsh_login switches a bash login shell to zsh, once" {
+  STATE="$BATS_TEST_TMPDIR/shell"; echo /bin/bash > "$STATE"
+  getent() { echo "icenoir:x:1000:1000::/home/icenoir:$(cat "$STATE")"; }
+  usermod() { [ "$1" = -s ] && echo "$2" > "$STATE"; }
+  ensure_zsh_login
+  [ "$(cat "$STATE")" = /bin/zsh ]
+  [ "${#CHANGED[@]}" -eq 1 ]
+  CHANGED=(); ensure_zsh_login
+  [ "${#CHANGED[@]}" -eq 0 ]
+}

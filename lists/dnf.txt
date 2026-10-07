@@ -6,6 +6,7 @@ gnome-system-monitor
 gnome-calculator
 loupe
 seahorse
+gnome-keyring-pam
 qt6-qtwayland
 papirus-icon-theme
 # CLI

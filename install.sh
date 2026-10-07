@@ -24,7 +24,7 @@ log "1/8 dnf and repositories"; setup_dnf
 log "2/8 system packages";      upgrade_system; install_dnf_list "$REPO/lists/dnf.txt"; install_codecs; install_node24
 log "3/8 tools outside dnf";    install_brew; install_brew_list "$REPO/lists/brew.txt"; install_github_tools; install_cursor; install_claude
 log "4/8 flatpaks";             install_flatpak_list "$REPO/lists/flatpak.txt"
-log "5/8 services and system";  install_system_files "$REPO/system/common"; enable_services; ensure_graphical_boot; add_cifs_mount; recolor_papirus
+log "5/8 services and system";  install_system_files "$REPO/system/common"; enable_services; ensure_graphical_boot; ensure_zsh_login; add_cifs_mount; recolor_papirus
 log "6/8 home path migration"
 if out=$("$REPO/bin/migrate-home-paths"); then
   if [[ "$out" == "nothing to migrate" ]]; then mark_ok "Claude paths"; else mark_changed "$out"; fi

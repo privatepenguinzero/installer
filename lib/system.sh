@@ -43,6 +43,13 @@ ensure_graphical_boot() {
   mark_changed "boot target set to graphical"
 }
 
+# The kickstart user gets bash; ~/.zprofile (PROTON_PASS_LINUX_KEYRING etc.) needs a zsh login.
+ensure_zsh_login() {
+  if [[ "$(getent passwd "$USER" | cut -d: -f7)" == /bin/zsh ]]; then mark_ok "zsh login shell"; return; fi
+  sudo usermod -s /bin/zsh "$USER"
+  mark_changed "login shell set to zsh"
+}
+
 add_cifs_mount() {
   local fstab=${FSTAB:-/etc/fstab}
   if [[ -z "${HA_SMB_HOST:-}" ]]; then
