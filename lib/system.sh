@@ -50,6 +50,24 @@ ensure_zsh_login() {
   mark_changed "login shell set to zsh"
 }
 
+# Lynis FILE-7524: cron config readable by root only.
+tighten_cron_perms() {
+  local f mode changed=0
+  for f in crontab cron.deny at.deny cron.hourly cron.daily cron.weekly cron.monthly cron.d; do
+    f="${ROOT:-}/etc/$f"; [[ -e "$f" ]] || continue
+    if [[ -d "$f" ]]; then mode=700; else mode=600; fi
+    [[ "$(stat -c %a "$f")" == "$mode" ]] && continue
+    sudo chmod "$mode" "$f"; changed=1
+  done
+  if (( changed )); then mark_changed "restricted cron permissions"; else mark_ok "cron permissions"; fi
+}
+
+# Load the hardening files that install_system_files put in place.
+apply_hardening() {
+  sudo sysctl -q --system
+  sudo sshd -t && sudo systemctl reload sshd
+}
+
 add_cifs_mount() {
   local fstab=${FSTAB:-/etc/fstab}
   if [[ -z "${HA_SMB_HOST:-}" ]]; then
