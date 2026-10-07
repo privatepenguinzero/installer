@@ -3,7 +3,10 @@
 # MAC-gated chain on the homelab netboot.xyz: only that NIC boots straight into
 # the Fedora installer; every other machine still gets the normal menu.
 set -euo pipefail
-PVE=root@<pve-host> CT=107 F=/opt/stacks/netbootxyz/config/menus/local-vars.ipxe
+# PVE_HOST (the Proxmox node running the netboot.xyz LXC) lives in local.env, not in this public repo.
+# shellcheck source=/dev/null
+source "${INSTALLER_ENV:-$HOME/.config/installer/local.env}"
+PVE=root@${PVE_HOST:?set PVE_HOST in ~/.config/installer/local.env} CT=${NETBOOT_CT:-107} F=/opt/stacks/netbootxyz/config/menus/local-vars.ipxe
 FED=https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Everything/x86_64/os
 remote() { ssh -o BatchMode=yes "$PVE" "pct exec $CT -- sh -c $(printf '%q' "$1")"; }
 

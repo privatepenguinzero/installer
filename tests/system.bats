@@ -7,8 +7,18 @@ setup() {
 
 @test "add_cifs_mount appends the line once" {
   FSTAB="$BATS_TEST_TMPDIR/fstab"; : > "$FSTAB"; CIFS_MOUNTPOINT="$BATS_TEST_TMPDIR/mnt"
+  HA_SMB_HOST=192.0.2.10
   add_cifs_mount; add_cifs_mount
-  [ "$(grep -c '//<ha-host>/config' "$FSTAB")" -eq 1 ]
+  [ "$(grep -c '^//192.0.2.10/config /mnt/homeassistant cifs ' "$FSTAB")" -eq 1 ]
+}
+
+@test "add_cifs_mount skips without HA_SMB_HOST and leaves fstab alone" {
+  FSTAB="$BATS_TEST_TMPDIR/fstab"; : > "$FSTAB"; CIFS_MOUNTPOINT="$BATS_TEST_TMPDIR/mnt"
+  unset HA_SMB_HOST
+  run add_cifs_mount
+  [ "$status" -eq 0 ]
+  [[ "$output" == *local.env* ]]
+  [ ! -s "$FSTAB" ]
 }
 
 @test "install_system_files copies once and then reports nothing" {

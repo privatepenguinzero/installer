@@ -29,6 +29,21 @@ in `docs/superpowers/`.
    ./install.sh
    ```
 
+## Local settings
+
+LAN addresses stay out of this public repo. `install.sh` and
+`install/netboot-hook` read them from `~/.config/installer/local.env`, which
+the private dotfiles install:
+
+```sh
+HA_SMB_HOST=…   # Home Assistant Samba share mounted at /mnt/homeassistant
+PVE_HOST=…      # Proxmox node running the netboot.xyz LXC
+NETBOOT_CT=107  # that LXC's id
+```
+
+Without the file the CIFS mount step is skipped with a warning; on a fresh
+install the dotfiles step brings it, so a second run adds the mount.
+
 ## Adding a program
 
 Add one line to the right list, then rerun `./install.sh`:

@@ -49,3 +49,9 @@ summary() {
   if (( ${#UNCHANGED[@]} )); then printf '  already in place: %s\n' "${UNCHANGED[@]}"; fi
   return 0
 }
+
+# Machine-local settings kept out of this public repo (LAN addresses). chezmoi
+# installs the file; see README.
+LOCAL_ENV=${INSTALLER_ENV:-$HOME/.config/installer/local.env}
+# shellcheck source=/dev/null
+if [[ -f "$LOCAL_ENV" ]]; then source "$LOCAL_ENV"; fi

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # lib/system.sh - services and files under /.
 
-CIFS_LINE='//<ha-host>/config /mnt/homeassistant cifs credentials=/home/icenoir/.smbcredentials-ha,uid=1000,gid=1000,file_mode=0644,dir_mode=0755,vers=3.0,x-systemd.automount,_netdev 0 0'
+CIFS_OPTS='credentials=/home/icenoir/.smbcredentials-ha,uid=1000,gid=1000,file_mode=0644,dir_mode=0755,vers=3.0,x-systemd.automount,_netdev'
 
 # install_system_files DIR - mirror DIR's tree under ${ROOT:-}/, recording each changed file.
 install_system_files() {
@@ -37,9 +37,13 @@ enable_services() {
 
 add_cifs_mount() {
   local fstab=${FSTAB:-/etc/fstab}
-  if grep -qF '//<ha-host>/config' "$fstab"; then mark_ok "Home Assistant CIFS mount"; return; fi
+  if [[ -z "${HA_SMB_HOST:-}" ]]; then
+    warn "Home Assistant CIFS mount skipped: set HA_SMB_HOST in $LOCAL_ENV (dotfiles bring it; rerun)"
+    return
+  fi
+  if grep -qF "//$HA_SMB_HOST/config" "$fstab"; then mark_ok "Home Assistant CIFS mount"; return; fi
   sudo mkdir -p "${CIFS_MOUNTPOINT:-/mnt/homeassistant}"
-  printf '%s\n' "$CIFS_LINE" | sudo tee -a "$fstab" >/dev/null
+  printf '//%s/config /mnt/homeassistant cifs %s 0 0\n' "$HA_SMB_HOST" "$CIFS_OPTS" | sudo tee -a "$fstab" >/dev/null
   if [[ "$fstab" == /etc/fstab ]]; then sudo systemctl daemon-reload; fi
   mark_changed "added Home Assistant CIFS mount"
 }
