@@ -37,3 +37,13 @@ setup() {
   run enable_services
   [ "$status" -ne 0 ]; [[ "$output" == *libvirtd* ]]
 }
+
+@test "ensure_graphical_boot switches a text-mode default to graphical, once" {
+  STATE="$BATS_TEST_TMPDIR/target"; echo multi-user.target > "$STATE"
+  systemctl() { case $1 in get-default) cat "$STATE" ;; set-default) echo "$2" > "$STATE" ;; esac; }
+  ensure_graphical_boot
+  [ "$(cat "$STATE")" = graphical.target ]
+  [ "${#CHANGED[@]}" -eq 1 ]
+  CHANGED=(); ensure_graphical_boot
+  [ "${#CHANGED[@]}" -eq 0 ]
+}

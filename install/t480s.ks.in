@@ -9,6 +9,7 @@ repo --name=updates --mirrorlist="https://mirrors.fedoraproject.org/mirrorlist?r
 rootpw --iscrypted @ROOT_HASH@
 user --name=icenoir --uid=1000 --gid=1000 --groups=wheel --homedir=/home/icenoir --iscrypted --password=@USER_HASH@
 firstboot --disable
+xconfig --startxonboot
 selinux --enforcing
 services --enabled=sshd
 sshpw --username=root --sshkey "@SSH_KEY@"

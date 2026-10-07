@@ -35,6 +35,14 @@ enable_services() {
   fi
 }
 
+# A text-mode kickstart install leaves multi-user.target as the default, so the
+# login screen never starts.
+ensure_graphical_boot() {
+  if [[ "$(systemctl get-default)" == graphical.target ]]; then mark_ok "graphical boot"; return; fi
+  sudo systemctl set-default graphical.target >/dev/null
+  mark_changed "boot target set to graphical"
+}
+
 add_cifs_mount() {
   local fstab=${FSTAB:-/etc/fstab}
   if [[ -z "${HA_SMB_HOST:-}" ]]; then
