@@ -105,6 +105,7 @@ setup() {
   kreadconfig6() { echo false; }
   kwriteconfig6() { echo "kwriteconfig6 $*" >> "$log"; }
   openssl() { echo "openssl $*" >> "$log"; touch "$BATS_TEST_TMPDIR/data/krdpserver/krdp.crt" "$BATS_TEST_TMPDIR/data/krdpserver/krdp.key"; }
+  gdbus() { echo "gdbus $*" >> "$log"; }
   XDG_DATA_HOME="$BATS_TEST_TMPDIR/data"
   setup_remote_desktop
   grep -q 'systemctl --global enable wayvnc.service' "$log"
@@ -112,4 +113,5 @@ setup() {
   grep -q 'kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true' "$log"
   grep -q "kwriteconfig6 --file krdpserverrc --group General --key Certificate $XDG_DATA_HOME/krdpserver/krdp.crt" "$log"
   grep -q "CertificateKey $XDG_DATA_HOME/krdpserver/krdp.key" "$log"
+  grep -q "PermissionStore.SetPermission kde-authorized true remote-desktop org.kde.krdpserver \['yes'\]" "$log"
 }

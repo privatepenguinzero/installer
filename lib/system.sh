@@ -113,6 +113,17 @@ setup_remote_desktop() {
     kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true
     mark_changed "KRDP uses the system password"
   fi
+  # Without this portal grant KRDP accepts the login but streams a black screen;
+  # the System Settings page is what normally sets it.
+  local ps=org.freedesktop.impl.portal.PermissionStore
+  local store=(--session --dest "$ps" --object-path /org/freedesktop/impl/portal/PermissionStore)
+  if gdbus call "${store[@]}" --method "$ps.Lookup" kde-authorized remote-desktop 2>/dev/null | grep -q "'org.kde.krdpserver': \['yes'\]"; then
+    mark_ok "KRDP screen-capture permission"
+  else
+    gdbus call "${store[@]}" --method "$ps.SetPermission" kde-authorized true remote-desktop org.kde.krdpserver "['yes']" >/dev/null \
+      || die "could not grant KRDP the remote-desktop permission"
+    mark_changed "KRDP screen-capture permission"
+  fi
   # krdpserver exits without a certificate; only the System Settings page makes one.
   local cert="${XDG_DATA_HOME:-$HOME/.local/share}/krdpserver/krdp.crt" key
   key="${cert%.crt}.key"
