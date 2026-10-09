@@ -104,8 +104,12 @@ setup() {
   systemctl() { echo "systemctl $*" >> "$log"; [[ $2 != is-enabled ]]; }
   kreadconfig6() { echo false; }
   kwriteconfig6() { echo "kwriteconfig6 $*" >> "$log"; }
+  openssl() { echo "openssl $*" >> "$log"; touch "$BATS_TEST_TMPDIR/data/krdpserver/krdp.crt" "$BATS_TEST_TMPDIR/data/krdpserver/krdp.key"; }
+  XDG_DATA_HOME="$BATS_TEST_TMPDIR/data"
   setup_remote_desktop
   grep -q 'systemctl --global enable wayvnc.service' "$log"
   grep -q 'systemctl --global enable app-org.kde.krdpserver.service' "$log"
   grep -q 'kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true' "$log"
+  grep -q "kwriteconfig6 --file krdpserverrc --group General --key Certificate $XDG_DATA_HOME/krdpserver/krdp.crt" "$log"
+  grep -q "CertificateKey $XDG_DATA_HOME/krdpserver/krdp.key" "$log"
 }

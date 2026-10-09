@@ -113,6 +113,18 @@ setup_remote_desktop() {
     kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true
     mark_changed "KRDP uses the system password"
   fi
+  # krdpserver exits without a certificate; only the System Settings page makes one.
+  local cert="${XDG_DATA_HOME:-$HOME/.local/share}/krdpserver/krdp.crt" key
+  key="${cert%.crt}.key"
+  if [[ -s "$cert" && -s "$key" && "$(kreadconfig6 --file krdpserverrc --group General --key Certificate)" == "$cert" ]]; then
+    mark_ok "KRDP certificate"; return
+  fi
+  mkdir -p "${cert%/*}"
+  (umask 077; openssl req -x509 -newkey rsa:2048 -sha256 -days 3650 -nodes \
+    -keyout "$key" -out "$cert" -subj "/CN=$(hostname)" 2>/dev/null) || die "could not create the KRDP certificate"
+  kwriteconfig6 --file krdpserverrc --group General --key Certificate "$cert"
+  kwriteconfig6 --file krdpserverrc --group General --key CertificateKey "$key"
+  mark_changed "KRDP certificate"
 }
 
 # Autologin straight into the desktop. The session (niri or Plasma) lives in its
