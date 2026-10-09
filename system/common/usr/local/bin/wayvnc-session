@@ -1,7 +1,8 @@
 #!/bin/sh
-# wayvnc-session - run wayvnc for the niri session. The first run creates the
-# RSA-AES key and a config that asks for the user's own password (PAM).
-# It listens everywhere; firewalld only lets it in on the NetBird interface.
+# wayvnc-session - run wayvnc for the niri session, asking for the user's own
+# password (PAM). It offers RSA-AES (TigerVNC) and TLS with username and
+# password (VeNCrypt, what Guacamole/Nexterm speak); the first run creates the
+# keys. It listens everywhere; firewalld only lets it in on the NetBird interface.
 set -eu
 dir=${XDG_CONFIG_HOME:-$HOME/.config}/wayvnc
 umask 077
@@ -9,14 +10,19 @@ mkdir -p "$dir"
 if [ ! -f "$dir/rsa_key.pem" ]; then
   openssl genrsa -traditional -out "$dir/rsa_key.pem" 4096 2>/dev/null
 fi
-if [ ! -f "$dir/config" ]; then
-  cat > "$dir/config" <<'EOF'
+if [ ! -f "$dir/tls_cert.pem" ]; then
+  openssl req -x509 -newkey ec -pkeyopt ec_paramgen_curve:secp384r1 -sha384 -days 3650 -nodes \
+    -keyout "$dir/tls_key.pem" -out "$dir/tls_cert.pem" -subj "/CN=$(hostname)" 2>/dev/null
+fi
+# Rewritten on every start so changes here reach existing installs.
+cat > "$dir/config" <<'EOF'
 use_relative_paths=true
 address=0.0.0.0
 enable_auth=true
 enable_pam=true
 rsa_private_key_file=rsa_key.pem
+private_key_file=tls_key.pem
+certificate_file=tls_cert.pem
 xkb_layout=it
 EOF
-fi
 exec wayvnc -C "$dir/config"
