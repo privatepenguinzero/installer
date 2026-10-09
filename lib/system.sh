@@ -4,12 +4,14 @@
 CIFS_OPTS='credentials=/home/icenoir/.smbcredentials-ha,uid=1000,gid=1000,file_mode=0644,dir_mode=0755,vers=3.0,x-systemd.automount,_netdev'
 
 # install_system_files DIR - mirror DIR's tree under ${ROOT:-}/, recording each changed file.
+# Files executable in the repo are installed 0755, the rest 0644.
 install_system_files() {
-  local src dst
+  local src dst mode
   while IFS= read -r -d '' src; do
     dst="${ROOT:-}${src#"$1"}"
-    if ! cmp -s "$src" "$dst" 2>/dev/null; then
-      sudo install -D -m 0644 "$src" "$dst"
+    if [[ -x "$src" ]]; then mode=0755; else mode=0644; fi
+    if ! cmp -s "$src" "$dst" 2>/dev/null || [[ "$(stat -c %a "$dst")" != "${mode#0}" ]]; then
+      sudo install -D -m "$mode" "$src" "$dst"
       sudo restorecon "$dst" 2>/dev/null || true
       mark_changed "wrote $dst"
     fi
@@ -93,4 +95,45 @@ recolor_papirus() {
   sudo touch /usr/share/icons/Papirus/.cat-mocha-peach
   rm -rf "$d"
   mark_changed "recoloured Papirus folders"
+}
+
+# VNC in niri (wayvnc) and RDP in Plasma (KRDP), both logging in with the user's
+# password. Neither port is open in the public zone, so they answer only on
+# NetBird (wt0, trusted zone).
+setup_remote_desktop() {
+  local u
+  for u in wayvnc.service app-org.kde.krdpserver.service; do
+    if systemctl --global is-enabled -q "$u" 2>/dev/null; then mark_ok "$u enabled for all users"; else
+      sudo systemctl --global enable "$u" || die "could not enable $u"; mark_changed "enabled user service $u"
+    fi
+  done
+  if [[ "$(kreadconfig6 --file krdpserverrc --group General --key SystemUserEnabled)" == true ]]; then
+    mark_ok "KRDP uses the system password"
+  else
+    kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true
+    mark_changed "KRDP uses the system password"
+  fi
+}
+
+# Autologin straight into the desktop. The session (niri or Plasma) lives in its
+# own file because switch-session rewrites it; niri is only the first default.
+setup_autologin() {
+  local dir="${ROOT:-}/etc/plasmalogin.conf.d" want
+  want=$(printf '[Autologin]\nUser=%s\n' "$USER")
+  if [[ "$(cat "$dir/10-autologin.conf" 2>/dev/null)" == "$want" ]]; then mark_ok "autologin for $USER"; else
+    printf '%s\n' "$want" | sudo install -D -m 0644 /dev/stdin "$dir/10-autologin.conf"
+    mark_changed "autologin for $USER"
+  fi
+  if [[ ! -f "$dir/20-autologin-session.conf" ]]; then
+    printf '[Autologin]\nSession=niri.desktop\n' | sudo install -D -m 0644 /dev/stdin "$dir/20-autologin-session.conf"
+    mark_changed "autologin session set to niri"
+  fi
+  # switch-session may run this one command as root without a password.
+  local sudoers="${ROOT:-}/etc/sudoers.d/switch-session" tmp
+  want="$USER ALL=(root) NOPASSWD: /usr/local/libexec/switch-session-apply niri, /usr/local/libexec/switch-session-apply plasma"
+  if [[ "$(sudo cat "$sudoers" 2>/dev/null)" == "$want" ]]; then mark_ok "switch-session sudo rule"; return; fi
+  tmp=$(mktemp); printf '%s\n' "$want" > "$tmp"
+  sudo visudo -cqf "$tmp" || { rm -f "$tmp"; die "switch-session sudo rule did not validate"; }
+  sudo install -D -m 0440 "$tmp" "$sudoers"; rm -f "$tmp"
+  mark_changed "switch-session sudo rule"
 }

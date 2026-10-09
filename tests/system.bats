@@ -58,3 +58,54 @@ setup() {
   CHANGED=(); ensure_zsh_login
   [ "${#CHANGED[@]}" -eq 0 ]
 }
+
+@test "install_system_files keeps the executable bit and fixes a wrong mode" {
+  src="$BATS_TEST_TMPDIR/src"; ROOT="$BATS_TEST_TMPDIR/root"
+  mkdir -p "$src/usr/local/bin"; printf '#!/bin/sh\n' > "$src/usr/local/bin/t"; chmod 755 "$src/usr/local/bin/t"
+  install_system_files "$src"
+  [ "$(stat -c %a "$ROOT/usr/local/bin/t")" = 755 ]
+  chmod 644 "$ROOT/usr/local/bin/t"; CHANGED=()
+  install_system_files "$src"
+  [ "$(stat -c %a "$ROOT/usr/local/bin/t")" = 755 ]
+  [ "${#CHANGED[@]}" -eq 1 ]
+}
+
+@test "setup_autologin writes user, default session and sudo rule once" {
+  ROOT="$BATS_TEST_TMPDIR/root"; USER=alice
+  visudo() { :; }
+  setup_autologin
+  grep -qx 'User=alice' "$ROOT/etc/plasmalogin.conf.d/10-autologin.conf"
+  grep -qx 'Session=niri.desktop' "$ROOT/etc/plasmalogin.conf.d/20-autologin-session.conf"
+  grep -q '^alice ALL=(root) NOPASSWD: /usr/local/libexec/switch-session-apply niri, ' "$ROOT/etc/sudoers.d/switch-session"
+  [ "$(stat -c %a "$ROOT/etc/sudoers.d/switch-session")" = 440 ]
+  CHANGED=(); setup_autologin
+  [ "${#CHANGED[@]}" -eq 0 ]
+}
+
+@test "setup_autologin keeps the session switch-session chose" {
+  ROOT="$BATS_TEST_TMPDIR/root"; USER=alice
+  visudo() { :; }
+  mkdir -p "$ROOT/etc/plasmalogin.conf.d"
+  printf '[Autologin]\nSession=plasma.desktop\n' > "$ROOT/etc/plasmalogin.conf.d/20-autologin-session.conf"
+  setup_autologin
+  grep -qx 'Session=plasma.desktop' "$ROOT/etc/plasmalogin.conf.d/20-autologin-session.conf"
+}
+
+@test "setup_autologin stops when the sudo rule does not validate" {
+  ROOT="$BATS_TEST_TMPDIR/root"; USER=alice
+  visudo() { return 1; }
+  run setup_autologin
+  [ "$status" -ne 0 ]
+  [ ! -e "$ROOT/etc/sudoers.d/switch-session" ]
+}
+
+@test "setup_remote_desktop enables both services and KRDP PAM login" {
+  log="$BATS_TEST_TMPDIR/log"
+  systemctl() { echo "systemctl $*" >> "$log"; [[ $2 != is-enabled ]]; }
+  kreadconfig6() { echo false; }
+  kwriteconfig6() { echo "kwriteconfig6 $*" >> "$log"; }
+  setup_remote_desktop
+  grep -q 'systemctl --global enable wayvnc.service' "$log"
+  grep -q 'systemctl --global enable app-org.kde.krdpserver.service' "$log"
+  grep -q 'kwriteconfig6 --file krdpserverrc --group General --key SystemUserEnabled true' "$log"
+}

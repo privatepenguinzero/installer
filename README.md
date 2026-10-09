@@ -57,6 +57,20 @@ Add one line to the right list, then rerun `./install.sh`:
 A misspelled or renamed dnf package stops the script with its name. `tests/run`
 checks every name in `dnf.txt` against the real repositories.
 
+## Remote desktop and session switching
+
+The laptop logs in automatically (Plasma Login Manager autologin). Which
+desktop it starts is in `/etc/plasmalogin.conf.d/20-autologin-session.conf`,
+niri by default.
+
+- **niri:** wayvnc serves VNC on port 5900. Use a client with RSA-AES
+  support, such as TigerVNC, and log in with your user password.
+- **Plasma:** KRDP serves RDP on port 3389, again with your user password.
+
+Neither port is open in the firewall's public zone, so both answer only over
+NetBird. Run **Cambia sessione** (`switch-session`) to log out and come back
+in the other desktop; it also becomes the one that starts at boot.
+
 ## Tests
 
 `tests/run` runs shellcheck and the bats suite in containers. It needs only

@@ -1,0 +1,31 @@
+#!/bin/sh
+# switch-session-apply niri|plasma - root side of switch-session (sudoers allows
+# only these two arguments). Sets the autologin session, then restarts the login
+# manager once the caller's graphical session is gone: plasmalogin only
+# autologins when it starts.
+# switch-session-apply --relogin USER - that second step, run detached.
+set -eu
+conf=/etc/plasmalogin.conf.d/20-autologin-session.conf
+
+graphical_sessions() {
+  loginctl list-sessions --no-legend | while read -r id _ user _; do
+    [ "$user" = "$1" ] || continue
+    [ "$(loginctl show-session "$id" -p Type --value)" = wayland ] && echo "$id"
+  done
+}
+
+case "${1:-}" in
+  niri|plasma)
+    user=${SUDO_USER:?run through sudo}
+    printf '[Autologin]\nSession=%s.desktop\n' "$1" > "$conf.tmp"
+    mv "$conf.tmp" "$conf"
+    systemd-run --quiet --collect --unit=switch-session-relogin "$0" --relogin "$user"
+    ;;
+  --relogin)
+    # Wait up to 30 s for the clean logout; past that the restart ends the session anyway.
+    i=0
+    while [ $i -lt 30 ] && [ -n "$(graphical_sessions "$2")" ]; do sleep 1; i=$((i + 1)); done
+    systemctl restart plasmalogin
+    ;;
+  *) echo "usage: switch-session-apply niri|plasma" >&2; exit 2 ;;
+esac

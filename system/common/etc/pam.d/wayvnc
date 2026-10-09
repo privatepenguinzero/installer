@@ -1,0 +1,4 @@
+#%PAM-1.0
+# wayvnc (enable_pam=true) checks the VNC login against the user's own password.
+auth     include  system-auth
+account  include  system-auth
