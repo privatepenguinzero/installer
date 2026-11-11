@@ -37,6 +37,8 @@ neovim
 ripgrep
 fd-find
 git-delta
+gping
+du-dust
 gitleaks
 xclip
 wl-clipboard
