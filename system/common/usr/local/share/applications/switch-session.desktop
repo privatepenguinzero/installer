@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Switch session
+Name[it]=Cambia sessione
+Comment=Log out and back in to the other desktop (niri / Plasma)
+Comment[it]=Esce ed entra nell'altro desktop (niri / Plasma)
+Exec=switch-session
+Icon=system-switch-user
+Terminal=false
+Categories=System;

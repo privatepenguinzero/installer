@@ -73,6 +73,9 @@ espanso
 brave-origin
 # NetBird
 netbird
+# remote desktop: VNC in niri, RDP in Plasma (only reachable over NetBird)
+wayvnc
+krdp
 # fonts
 rsms-inter-vf-fonts
 google-roboto-fonts

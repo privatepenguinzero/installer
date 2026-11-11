@@ -1,0 +1,25 @@
+#!/bin/sh
+# wayvnc-session - run wayvnc for the niri session, asking for the user's own
+# password (PAM). It offers RSA-AES (TigerVNC) and, through relax_encryption,
+# Apple DH: the only one Guacamole (Nexterm) can use. Apple DH encrypts only the
+# login, but the port is reachable only through NetBird (WireGuard), which
+# encrypts the rest. No TLS: Guacamole would pick VeNCrypt first and fail on the
+# X509 credentials it cannot supply. The first run creates the key.
+set -eu
+dir=${XDG_CONFIG_HOME:-$HOME/.config}/wayvnc
+umask 077
+mkdir -p "$dir"
+if [ ! -f "$dir/rsa_key.pem" ]; then
+  openssl genrsa -traditional -out "$dir/rsa_key.pem" 4096 2>/dev/null
+fi
+# Rewritten on every start so changes here reach existing installs.
+cat > "$dir/config" <<'EOF'
+use_relative_paths=true
+address=0.0.0.0
+enable_auth=true
+enable_pam=true
+relax_encryption=true
+rsa_private_key_file=rsa_key.pem
+xkb_layout=it
+EOF
+exec wayvnc -C "$dir/config"

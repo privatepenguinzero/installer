@@ -1,0 +1,15 @@
+#!/bin/sh
+# switch-session - log out of niri into Plasma, or out of Plasma into niri.
+# The root helper makes the other session the autologin one and logs back in.
+set -eu
+case "${XDG_CURRENT_DESKTOP:-}" in
+  niri) target=plasma ;;
+  KDE)  target=niri ;;
+  *) echo "switch-session: unknown session '${XDG_CURRENT_DESKTOP:-}'" >&2; exit 1 ;;
+esac
+sudo -n /usr/local/libexec/switch-session-apply "$target"
+# Log out cleanly so the old session's user services stop before the new one starts.
+case "$target" in
+  plasma) niri msg action quit --skip-confirmation ;;
+  niri)   qdbus6 org.kde.Shutdown /Shutdown org.kde.Shutdown.logout ;;
+esac
